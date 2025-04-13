@@ -31,6 +31,16 @@ def get_products_by_vm(vm_id):
 def get_cart_count():
     return sum(session.get('cart', {}).values())
 
+@app.route('/')
+def root():
+    return 'Welcome. Try /M0001/'
+
+@app.route('/liff-login')
+def liff_login():
+    next_url = request.args.get("next", "/")
+    return render_template("liff_login.html", liff_id=LIFF_ID, next_url=next_url)
+
+
 # Route: Homepage (Product list)
 @app.route('/<vm_id>/')
 def index(vm_id):
@@ -126,4 +136,4 @@ def profile():
 
 # Run the app
 if __name__ == '__main__':
-    app.run(port=6001, debug=True)
+    app.run(port=6002, debug=True)

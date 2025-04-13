@@ -211,47 +211,56 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
-  <script>
-    const vm_id = "{{ vm_id }}";
+<script>
+  const vm_id = "{{ vm_id }}";
 
-    const productCountRow2 = {{ products[5:]|length }};
-    new Swiper(".mySwiper2", {
-      loop: productCountRow2 > 5,
-      spaceBetween: 4,
-      breakpoints: {
-        0: { slidesPerView: 2 },
-        576: { slidesPerView: 3 },
-        768: { slidesPerView: 4 },
-        992: { slidesPerView: 5 }
-      }
-    });
-
-    async function startLiff() {
-      try {
-        await liff.init({ liffId: "{{ liff_id }}" });
-
-        if (!liff.isLoggedIn()) {
-          liff.login();
-        } else {
-          const profile = await liff.getProfile();
-          document.getElementById("line-profile").innerHTML = `
-            <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
-            <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
-          `;
-          await fetch("/profile", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(profile)
-          });
-        }
-      } catch (err) {
-        document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF Error</span>";
-        console.error("LIFF Error:", err);
-      }
+  // ✅ Swiper setup
+  const productCountRow2 = {{ products[5:]|length }};
+  new Swiper(".mySwiper2", {
+    loop: productCountRow2 > 5,
+    spaceBetween: 4,
+    breakpoints: {
+      0: { slidesPerView: 2 },
+      576: { slidesPerView: 3 },
+      768: { slidesPerView: 4 },
+      992: { slidesPerView: 5 }
     }
+  });
 
-    window.onload = startLiff;
+  // ✅ Combined login + profile logic
+  async function initLiffFlow() {
+    try {
+      await liff.init({ liffId: "{{ liff_id }}" });
 
+      if (!liff.isLoggedIn()) {
+        const currentPath = window.location.pathname;
+        window.location.href = `/liff-login?next=${encodeURIComponent(currentPath)}`;
+        return;
+      }
+
+      const profile = await liff.getProfile();
+
+      // Top-right LINE profile
+      document.getElementById("line-profile").innerHTML = `
+        <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
+        <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
+      `;
+
+      // Save to backend
+      await fetch("/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      });
+
+    } catch (err) {
+      console.error("LIFF init error:", err);
+      document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF error</span>";
+    }
+  }
+
+  // ✅ Cart animation + API
+  function setupAddToCartButtons() {
     document.querySelectorAll('.add-to-cart').forEach(btn => {
       btn.addEventListener('click', async function (e) {
         e.preventDefault();
@@ -293,6 +302,14 @@
         }
       });
     });
-  </script>
+  }
+
+  // ✅ Main onload
+  window.addEventListener("DOMContentLoaded", async () => {
+    await initLiffFlow();
+    setupAddToCartButtons();
+  });
+</script>
+
 </body>
 </html>
