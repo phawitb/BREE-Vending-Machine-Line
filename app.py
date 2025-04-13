@@ -129,6 +129,6 @@ def confirm_order():
         'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'
     })
 
-# Run the app
-if __name__ == '__main__':
-    app.run(port=6001, debug=True)
+# # Run the app
+# if __name__ == '__main__':
+#     app.run(port=6001, debug=True)
