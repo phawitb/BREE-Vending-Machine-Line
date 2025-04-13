@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your Cart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      background-color: #f8f9fa;
+    }
+
+    .cart-title-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #f8f9fa;
+      z-index: 1000;
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: #333;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .btn-back:hover {
+      color: #0d6efd;
+    }
+
+    .cart-body {
+      padding-top: 80px;
+    }
+
+    .qr-section {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .line-info {
+      font-size: 0.85rem;
+      background-color: #fff;
+      padding: 1rem;
+      margin-top: 2rem;
+      border-top: 1px solid #ccc;
+    }
+
+    @media (max-width: 576px) {
+      h1 {
+        font-size: 1.3rem;
+      }
+
+      .btn {
+        font-size: 0.9rem;
+      }
+
+      table td, table th {
+        font-size: 14px;
+        padding: 0.4rem;
+      }
+
+      .qr-section img {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Fixed Header -->
+  <div class="cart-title-fixed">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('index') }}" class="d-flex align-items-center">
+        <img src="{{ url_for('static', filename='img/BackArrowIcon.png') }}" alt="Back" style="height: 24px;">
+      </a>
+      <div class="fs-5 fw-light">Your Shopping Cart</div>
+    </div>
+    <div class="d-flex align-items-center gap-2" id="line-profile">
+      <!-- LINE Profile will appear here -->
+    </div>
+  </div>
+
+  <!-- Cart Body -->
+  <div class="container-fluid cart-body">
+    {% if cart_items %}
+      <!-- Table -->
+      <div class="table-responsive px-2">
+        <table class="table table-bordered table-striped">
+          <thead class="table-dark">
+            <tr>
+              <th>Product</th>
+              <th class="text-center">Price</th>
+              <th class="text-center">Qty.</th>
+              <th class="text-center">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart_items %}
+            <tr>
+              <td>{{ item.name }}</td>
+              <td class="text-center">฿{{ item.price|int }}</td>
+              <td class="text-center">{{ item.quantity|int }}</td>
+              <td class="text-center">฿{{ item.total|int }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Total & Clear Button -->
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-2 mt-0">
+        <a href="{{ url_for('clear_cart') }}" class="btn btn-danger">Clear Cart</a>
+        <h4 class="mb-0 ms-auto text-danger">Total: ฿{{ total|int }}</h4>
+      </div>
+
+      <!-- Confirm Button -->
+      <div class="mt-2 px-2">
+        <button class="btn btn-success btn-lg w-100" id="confirmBtn">Confirm Order</button>
+      </div>
+
+      <!-- QR Section -->
+      <div id="qrSection" class="qr-section text-center px-2">
+        <h5 class="mt-4">📱 Scan to Pay</h5>
+        <img id="qrImage" src="" alt="QR Code for Payment" class="img-fluid" style="max-width: 300px;">
+        <p class="mt-2 text-muted">Scan with your mobile banking app to complete the payment.</p>
+      </div>
+
+    {% else %}
+      <p class="text-muted px-2 mt-5">Your cart is empty.</p>
+    {% endif %}
+
+    <!-- LINE Info Display -->
+    <div class="line-info text-center text-muted" id="line-info-box">
+      <p><strong>LINE Display Name:</strong> <span id="line-name">Loading...</span></p>
+      <p><strong>Access Token:</strong> <code id="line-token">Loading...</code></p>
+    </div>
+  </div>
+
+  <!-- Scripts <img src="${profile.pictureUrl}" width="32" height="32" style="border-radius: 50%; object-fit: cover;" /> -->
+  <script>
+    async function startLiff() {
+      try {
+        await liff.init({ liffId: "{{ liff_id }}" });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          const profile = await liff.getProfile();
+          const token = await liff.getAccessToken();
+
+          // Top-right header
+          document.getElementById("line-profile").innerHTML = `
+            <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
+            <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
+          `;
+
+          // Bottom display
+          document.getElementById("line-name").innerText = profile.displayName;
+          document.getElementById("line-token").innerText = token;
+
+          // Send to backend
+          await fetch("/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...profile, token })
+          });
+        }
+      } catch (err) {
+        console.error("LIFF Error:", err);
+        document.getElementById("line-info-box").innerHTML = "<p class='text-danger'>Failed to load LINE info</p>";
+      }
+    }
+
+    window.onload = startLiff;
+
+    const confirmBtn = document.getElementById("confirmBtn");
+    const qrSection = document.getElementById("qrSection");
+    const qrImage = document.getElementById("qrImage");
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener("click", async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Processing...";
+
+        try {
+          const res = await fetch('/api/confirm_order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          const data = await res.json();
+
+          if (data.status === 'success') {
+            qrImage.src = data.qr_url;
+            qrSection.style.display = "block";
+            confirmBtn.style.display = "none";
+          } else {
+            alert(data.message || "Order failed.");
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = "Confirm Order";
+          }
+        } catch (err) {
+          alert("Server error.");
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Confirm Order";
+        }
+      });
+    }
+  </script>
+</body>
+</html>
