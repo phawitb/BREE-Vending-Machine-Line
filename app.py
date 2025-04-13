@@ -134,6 +134,6 @@ def profile():
 
     return jsonify({"status": "ok", "message": "New user inserted", "line_id": line_id})
 
-# Run the app
-if __name__ == '__main__':
-    app.run(port=6002, debug=True)
+# # Run the app
+# if __name__ == '__main__':
+#     app.run(port=6002, debug=True)
