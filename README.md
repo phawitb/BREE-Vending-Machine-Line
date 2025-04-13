@@ -1,4 +1,4 @@
-# BREE-Vending-Machine-Line
+# BREE-Vending-Machine-Line_v2
 ### Line Developer
 Endpoint URL : https://bree-vending-machine-line.onrender.com/liff-login  
 Run Start : https://liff.line.me/2007249491-JMOvdZDM?vmId=M0001  
