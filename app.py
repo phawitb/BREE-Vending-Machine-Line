@@ -20,9 +20,6 @@ db = client["BREE"]
 users_collection = db["users"]
 vms_collection = db["vms"]
 
-# Define vending machine ID
-vm_id = "M0001"
-
 # Function to get products from MongoDB for the given vmId
 def get_products_by_vm(vm_id):
     doc = vms_collection.find_one({'vmId': vm_id})
@@ -35,19 +32,19 @@ def get_cart_count():
     return sum(session.get('cart', {}).values())
 
 # Route: Homepage (Product list)
-@app.route('/')
-def index():
-    products = get_products_by_vm(vm_id)  # always fetch fresh data
+@app.route('/<vm_id>/')
+def index(vm_id):
+    products = get_products_by_vm(vm_id)
     cart_count = get_cart_count()
-    return render_template('index.html', products=products, cart_count=cart_count, liff_id=LIFF_ID)
+    return render_template('index.html', products=products, cart_count=cart_count, liff_id=LIFF_ID, vm_id=vm_id)
 
 # Route: Shopping cart
-@app.route('/cart')
-def cart():
+@app.route('/<vm_id>/cart')
+def cart(vm_id):
     cart = session.get('cart', {})
     cart_items = []
     total = 0
-    products = get_products_by_vm(vm_id)  # always fetch fresh data
+    products = get_products_by_vm(vm_id)
 
     for product_id, quantity in cart.items():
         for p in products:
@@ -62,46 +59,17 @@ def cart():
                 })
 
     cart_count = get_cart_count()
-    return render_template('cart.html', cart_items=cart_items, total=total, cart_count=cart_count, liff_id=LIFF_ID)
-
-# Route: LINE profile save to MongoDB (only new user)
-@app.route('/profile', methods=['POST'])
-def profile():
-    data = request.get_json()
-    print("🎯 Received LINE Profile:", data)
-
-    line_id = data.get('userId')
-    display_name = data.get('displayName')
-
-    if not line_id:
-        return jsonify({'status': 'error', 'message': 'Missing line ID'}), 400
-
-    # Check if user already exists
-    existing_user = users_collection.find_one({'line_id': line_id})
-    if existing_user:
-        print("👤 User already exists:", existing_user['line_name'])
-        return jsonify({"status": "ok", "message": "User already exists", "line_id": line_id})
-
-    # Insert new user
-    new_user = {
-        'line_id': line_id,
-        'line_name': display_name,
-        'created_at': datetime.utcnow()
-    }
-    users_collection.insert_one(new_user)
-    print("✅ New user inserted:", display_name)
-
-    return jsonify({"status": "ok", "message": "New user inserted", "line_id": line_id})
+    return render_template('cart.html', cart_items=cart_items, total=total, cart_count=cart_count, liff_id=LIFF_ID, vm_id=vm_id)
 
 # Route: Clear shopping cart
-@app.route('/clear_cart')
-def clear_cart():
+@app.route('/<vm_id>/clear_cart')
+def clear_cart(vm_id):
     session.pop('cart', None)
-    return redirect(url_for('cart'))
+    return redirect(url_for('cart', vm_id=vm_id))
 
 # API: Add product to cart
-@app.route('/api/add_to_cart', methods=['POST'])
-def api_add_to_cart():
+@app.route('/<vm_id>/api/add_to_cart', methods=['POST'])
+def api_add_to_cart(vm_id):
     product_id = request.json.get('product_id')
     if not product_id:
         return jsonify({'status': 'error', 'message': 'Missing product_id'}), 400
@@ -116,19 +84,46 @@ def api_add_to_cart():
     return jsonify({'status': 'success', 'cart': cart})
 
 # API: Confirm order (return QR)
-@app.route('/api/confirm_order', methods=['POST'])
-def confirm_order():
+@app.route('/<vm_id>/api/confirm_order', methods=['POST'])
+def confirm_order(vm_id):
     cart = session.get('cart', {})
     if not cart:
         return jsonify({'status': 'error', 'message': 'Cart is empty'}), 400
 
-    print("🧾 Order confirmed:", cart)
+    print(f"🧾 Order confirmed from VM {vm_id}:", cart)
 
     return jsonify({
         'status': 'success',
         'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'
     })
 
-# # Run the app
-# if __name__ == '__main__':
-#     app.run(port=6001, debug=True)
+# Route: LINE profile save to MongoDB (only new user)
+@app.route('/profile', methods=['POST'])
+def profile():
+    data = request.get_json()
+    print("🎯 Received LINE Profile:", data)
+
+    line_id = data.get('userId')
+    display_name = data.get('displayName')
+
+    if not line_id:
+        return jsonify({'status': 'error', 'message': 'Missing line ID'}), 400
+
+    existing_user = users_collection.find_one({'line_id': line_id})
+    if existing_user:
+        print("👤 User already exists:", existing_user['line_name'])
+        return jsonify({"status": "ok", "message": "User already exists", "line_id": line_id})
+
+    new_user = {
+        'line_id': line_id,
+        'line_name': display_name,
+        'created_at': datetime.utcnow()
+    }
+    users_collection.insert_one(new_user)
+    print("✅ New user inserted:", display_name)
+
+    return jsonify({"status": "ok", "message": "New user inserted", "line_id": line_id})
+
+# Run the app
+if __name__ == '__main__':
+    app.run(port=6001, debug=True)

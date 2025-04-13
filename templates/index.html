@@ -139,31 +139,22 @@
     }
   </style>
 </head>
+
 <body class="bg-light">
   <!-- Fixed Header -->
   <div class="fixed-header d-flex align-items-center shadow-sm px-3">
-    <!-- Logo: ด้านซ้ายสุด -->
     <img src="{{ url_for('static', filename='img/BREE_logo_no_bg.png') }}" alt="BREE Logo" style="height: 30px;">
-
-    <!-- Spacer -->
     <div class="flex-grow-1"></div>
-
-    <!-- Cart + LINE Profile: ด้านขวาติดกัน -->
     <div class="d-flex align-items-center gap-2">
-      <a href="{{ url_for('cart') }}" class="btn btn-outline-success position-relative cart-icon" id="cartIcon">
+      <a href="{{ url_for('cart', vm_id=vm_id) }}" class="btn btn-outline-success position-relative cart-icon" id="cartIcon">
         🛒 View Cart
         <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
           {{ cart_count }}
         </span>
       </a>
-
-      <!-- LINE Profile Injected Here -->
-      <div class="d-flex align-items-center gap-2" id="line-profile">
-        <!-- JS จะ inject รูปและชื่อที่นี่ -->
-      </div>
+      <div class="d-flex align-items-center gap-2" id="line-profile"></div>
     </div>
   </div>
-
 
   <!-- Page Content -->
   <div class="container-fluid px-1">
@@ -221,6 +212,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
   <script>
+    const vm_id = "{{ vm_id }}";
+
     const productCountRow2 = {{ products[5:]|length }};
     new Swiper(".mySwiper2", {
       loop: productCountRow2 > 5,
@@ -233,7 +226,6 @@
       }
     });
 
-    // LIFF Init // <img src="${profile.pictureUrl}" width="36" height="36" style="border-radius: 50%; object-fit: cover;" />
     async function startLiff() {
       try {
         await liff.init({ liffId: "{{ liff_id }}" });
@@ -242,12 +234,10 @@
           liff.login();
         } else {
           const profile = await liff.getProfile();
-
           document.getElementById("line-profile").innerHTML = `
             <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
             <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
           `;
-
           await fetch("/profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -262,7 +252,6 @@
 
     window.onload = startLiff;
 
-    // Add to Cart Animation
     document.querySelectorAll('.add-to-cart').forEach(btn => {
       btn.addEventListener('click', async function (e) {
         e.preventDefault();
@@ -276,7 +265,6 @@
 
         const btnRect = this.getBoundingClientRect();
         const cartRect = document.getElementById('cartIcon').getBoundingClientRect();
-
         img.style.left = (btnRect.left + window.scrollX) + 'px';
         img.style.top = (btnRect.top + window.scrollY) + 'px';
         img.style.width = '100px';
@@ -288,7 +276,7 @@
         setTimeout(() => { img.remove(); }, 800);
 
         try {
-          const res = await fetch('/api/add_to_cart', {
+          const res = await fetch(`/${vm_id}/api/add_to_cart`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ product_id: parseInt(productId) })
