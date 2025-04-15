@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,155 +9,43 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      overflow-x: hidden;
-      background-color: #f8f9fa;
-    }
-
-    .fly-img {
-      position: absolute;
-      z-index: 9999;
-      transition: all 1s ease-in-out;
-      pointer-events: none;
-    }
-
-    .cart-icon {
-      font-size: 1rem;
-    }
-
-    .fixed-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background-color: #f8f9fa;
-      padding: 0.8rem 1rem;
-      z-index: 1000;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    .container-fluid {
-      padding-top: 80px !important;
-    }
-
-    .swiper-container {
-      margin-bottom: 0;
-    }
-
-    .swiper-slide {
-      display: flex;
-      justify-content: center;
-    }
-
-    .card {
-      width: 100%;
-      margin: 0;
-      border-radius: 0.5rem;
-      overflow: hidden;
-    }
-
-    .card-img-wrapper {
-      height: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #fff;
-      border-top-left-radius: 0.5rem;
-      border-top-right-radius: 0.5rem;
-      overflow: hidden;
-    }
-
-    .card-img-top {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-      border-top-left-radius: 0.5rem;
-      border-top-right-radius: 0.5rem;
-    }
-
-    .card-title {
-      font-size: 0.75rem;
-      line-height: 1.2rem;
-      height: 2.4rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    .card-text {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: red;
-    }
-
-    h4 {
-      margin: 0;
-      margin-top: 1rem;
-      font-size: 1.1rem;
-    }
-
+    html, body { margin: 0; padding: 0; width: 100%; overflow-x: hidden; background-color: #f8f9fa; }
+    .fly-img { position: absolute; z-index: 9999; transition: all 1s ease-in-out; pointer-events: none; }
+    .cart-icon { font-size: 1rem; }
+    .fixed-header { position: fixed; top: 0; left: 0; right: 0; height: 60px; background-color: #f8f9fa; padding: 0.8rem 1rem; z-index: 1000; border-bottom: 1px solid #dee2e6; }
+    .container-fluid { padding-top: 80px !important; }
+    .swiper-container { margin-bottom: 0; }
+    .swiper-slide { display: flex; justify-content: center; }
+    .card { width: 100%; margin: 0; border-radius: 0.5rem; overflow: hidden; }
+    .card-img-wrapper { height: 140px; display: flex; align-items: center; justify-content: center; background-color: #fff; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; overflow: hidden; }
+    .card-img-top { max-height: 100%; max-width: 100%; object-fit: contain; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+    .card-title { font-size: 0.75rem; line-height: 1.2rem; height: 2.4rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .card-text { font-size: 1.2rem; font-weight: bold; color: red; }
+    h4 { margin: 0; margin-top: 1rem; font-size: 1.1rem; }
     @media (max-width: 576px) {
-      h1 {
-        font-size: 1.4rem;
-      }
-
-      .swiper-slide {
-        width: 160px !important;
-      }
-
-      .card {
-        max-width: 100% !important;
-      }
-
-      .card-title {
-        font-size: 0.8rem;
-        line-height: 1.2rem;
-        height: 2.4rem;
-      }
-
-      .card-text {
-        font-size: 1.1rem;
-      }
-
-      .card-img-wrapper {
-        height: 100px;
-      }
-
-      .btn {
-        font-size: 0.8rem;
-        padding: 0.3rem 0.6rem;
-      }
-
-      .cart-icon {
-        font-size: 0.9rem;
-      }
+      h1 { font-size: 1.4rem; }
+      .swiper-slide { width: 160px !important; }
+      .card { max-width: 100% !important; }
+      .card-title { font-size: 0.8rem; line-height: 1.2rem; height: 2.4rem; }
+      .card-text { font-size: 1.1rem; }
+      .card-img-wrapper { height: 100px; }
+      .btn { font-size: 0.8rem; padding: 0.3rem 0.6rem; }
+      .cart-icon { font-size: 0.9rem; }
     }
   </style>
 </head>
-
 <body class="bg-light">
-  <!-- Fixed Header -->
   <div class="fixed-header d-flex align-items-center shadow-sm px-3">
     <img src="{{ url_for('static', filename='img/BREE_logo_no_bg.png') }}" alt="BREE Logo" style="height: 30px;">
     <div class="flex-grow-1"></div>
     <div class="d-flex align-items-center gap-2">
       <a href="{{ url_for('cart', vm_id=vm_id) }}" class="btn btn-outline-success position-relative cart-icon" id="cartIcon">
         🛒 View Cart
-        <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-          {{ cart_count }}
-        </span>
+        <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ cart_count }}</span>
       </a>
       <div class="d-flex align-items-center gap-2" id="line-profile"></div>
     </div>
   </div>
-
-  <!-- Page Content -->
   <div class="container-fluid px-1">
     <h4 class="mb-2">Best Sellers</h4>
     <div class="swiper mySwiper2 swiper-container">
@@ -172,19 +61,13 @@
                 <h5 class="card-title">{{ product.name }}</h5>
                 <p class="card-text">฿{{ product.price|int }}</p>
               </div>
-              <button class="btn btn-primary add-to-cart mt-2"
-                      data-id="{{ product.id }}"
-                      data-img="{{ product.image }}">
-                Add to Cart
-              </button>
+              <button class="btn btn-primary add-to-cart mt-2" data-id="{{ product.id }}" data-img="{{ product.image }}">Add to Cart</button>
             </div>
           </div>
         </div>
         {% endfor %}
       </div>
     </div>
-
-    <!-- Products -->
     <h4 class="mb-2">Products</h4>
     <div class="row g-2">
       {% for product in products %}
@@ -198,118 +81,109 @@
               <h5 class="card-title">{{ product.name }}</h5>
               <p class="card-text">฿{{ product.price|int }}</p>
             </div>
-            <button class="btn btn-primary add-to-cart mt-2"
-                    data-id="{{ product.id }}"
-                    data-img="{{ product.image }}">
-              Add to Cart
-            </button>
+            <button class="btn btn-primary add-to-cart mt-2" data-id="{{ product.id }}" data-img="{{ product.image }}">Add to Cart</button>
           </div>
         </div>
       </div>
       {% endfor %}
     </div>
   </div>
-
   <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
-<script>
-  const vm_id = "{{ vm_id }}";
-
-  // ✅ Swiper setup
-  const productCountRow2 = {{ products[5:]|length }};
-  new Swiper(".mySwiper2", {
-    loop: productCountRow2 > 5,
-    spaceBetween: 4,
-    breakpoints: {
-      0: { slidesPerView: 2 },
-      576: { slidesPerView: 3 },
-      768: { slidesPerView: 4 },
-      992: { slidesPerView: 5 }
-    }
-  });
-
-  // ✅ Combined login + profile logic
-  async function initLiffFlow() {
-    try {
-      await liff.init({ liffId: "{{ liff_id }}" });
-
-      if (!liff.isLoggedIn()) {
-        const currentPath = window.location.pathname;
-        window.location.href = `/liff-login?next=${encodeURIComponent(currentPath)}`;
-        return;
+  <script>
+    const vm_id = "{{ vm_id }}";
+    const productCountRow2 = {{ products[5:]|length }};
+    new Swiper(".mySwiper2", {
+      loop: productCountRow2 > 5,
+      spaceBetween: 4,
+      breakpoints: {
+        0: { slidesPerView: 2 },
+        576: { slidesPerView: 3 },
+        768: { slidesPerView: 4 },
+        992: { slidesPerView: 5 }
       }
-
-      const profile = await liff.getProfile();
-
-      // Top-right LINE profile
-      document.getElementById("line-profile").innerHTML = `
-        <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
-        <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
-      `;
-
-      // Save to backend
-      await fetch("/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(profile)
-      });
-
-    } catch (err) {
-      console.error("LIFF init error:", err);
-      document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF error</span>";
-    }
-  }
-
-  // ✅ Cart animation + API
-  function setupAddToCartButtons() {
-    document.querySelectorAll('.add-to-cart').forEach(btn => {
-      btn.addEventListener('click', async function (e) {
-        e.preventDefault();
-        const imgSrc = this.getAttribute('data-img');
-        const productId = this.getAttribute('data-id');
-
-        const img = document.createElement('img');
-        img.src = imgSrc;
-        img.className = 'fly-img';
-        document.body.appendChild(img);
-
-        const btnRect = this.getBoundingClientRect();
-        const cartRect = document.getElementById('cartIcon').getBoundingClientRect();
-        img.style.left = (btnRect.left + window.scrollX) + 'px';
-        img.style.top = (btnRect.top + window.scrollY) + 'px';
-        img.style.width = '100px';
-        img.offsetWidth;
-        img.style.left = (cartRect.left + window.scrollX) + 'px';
-        img.style.top = (cartRect.top + window.scrollY) + 'px';
-        img.style.width = '30px';
-        img.style.opacity = '0.5';
-        setTimeout(() => { img.remove(); }, 800);
-
-        try {
-          const res = await fetch(`/${vm_id}/api/add_to_cart`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product_id: parseInt(productId) })
-          });
-          const data = await res.json();
-          if (data.status === 'success') {
-            const count = Object.values(data.cart).reduce((a, b) => a + b, 0);
-            document.getElementById('cart-count').textContent = count;
-          } else {
-            alert('Add failed');
-          }
-        } catch (err) {
-          alert('Server error');
-        }
-      });
     });
-  }
 
-  // ✅ Main onload
-  window.addEventListener("DOMContentLoaded", async () => {
-    await initLiffFlow();
-    setupAddToCartButtons();
-  });
-</script>
+    async function initLiffFlow() {
+      try {
+        await liff.init({ liffId: "{{ liff_id }}" });
+        if (!liff.isLoggedIn()) {
+          const currentPath = window.location.pathname;
+          window.location.href = `/liff-login?next=${encodeURIComponent(currentPath)}`;
+          return;
+        }
+        const profile = await liff.getProfile();
 
+        await fetch("/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(profile)
+        }).then(res => res.json())
+          .then(data => {
+            if (data.point) {
+              sessionStorage.setItem('user_point', data.point);
+            }
+          });
+
+        const userPoint = sessionStorage.getItem('user_point') || '0';
+
+        document.getElementById("line-profile").innerHTML = `
+          <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
+            <img src="${profile.pictureUrl}" alt="Profile"
+                style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
+          </a>
+        `;
+
+      } catch (err) {
+        console.error("LIFF init error:", err);
+        document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF error</span>";
+      }
+    }
+
+    function setupAddToCartButtons() {
+      document.querySelectorAll('.add-to-cart').forEach(btn => {
+        btn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          const imgSrc = this.getAttribute('data-img');
+          const productId = this.getAttribute('data-id');
+          const img = document.createElement('img');
+          img.src = imgSrc;
+          img.className = 'fly-img';
+          document.body.appendChild(img);
+          const btnRect = this.getBoundingClientRect();
+          const cartRect = document.getElementById('cartIcon').getBoundingClientRect();
+          img.style.left = (btnRect.left + window.scrollX) + 'px';
+          img.style.top = (btnRect.top + window.scrollY) + 'px';
+          img.style.width = '100px';
+          img.offsetWidth;
+          img.style.left = (cartRect.left + window.scrollX) + 'px';
+          img.style.top = (cartRect.top + window.scrollY) + 'px';
+          img.style.width = '30px';
+          img.style.opacity = '0.5';
+          setTimeout(() => { img.remove(); }, 800);
+          try {
+            const res = await fetch(`/${vm_id}/api/add_to_cart`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ product_id: parseInt(productId) })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+              const count = Object.values(data.cart).reduce((a, b) => a + b, 0);
+              document.getElementById('cart-count').textContent = count;
+            } else {
+              alert('Add failed');
+            }
+          } catch (err) {
+            alert('Server error');
+          }
+        });
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await initLiffFlow();
+      setupAddToCartButtons();
+    });
+  </script>
 </body>
 </html>
