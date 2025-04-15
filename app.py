@@ -171,5 +171,5 @@ def profile_get():
     user_picture = session.get('user_picture', '/static/default_user.png')
     return render_template('profile.html', display_name=display_name, user_picture=user_picture)
 
-if __name__ == '__main__':
-    app.run(port=6001, debug=True)
+# if __name__ == '__main__':
+#     app.run(port=6001, debug=True)
