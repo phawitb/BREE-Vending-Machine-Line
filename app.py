@@ -42,6 +42,7 @@ def liff_login():
         next_url = f"/{vm_id}"
     return render_template("liff_login.html", liff_id=LIFF_ID, next_url=next_url)
 
+
 @app.route('/<vm_id>/')
 def index(vm_id):
     session['last_vm_id'] = vm_id
