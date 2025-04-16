@@ -16,23 +16,13 @@
         await liff.init({ liffId: "{{ liff_id }}" });
 
         if (!liff.isLoggedIn()) {
-          window.location.href = "https://line.me/R/oaMessage/@342migue/?addfriend";
           liff.login({ redirectUri: window.location.href });
-          return;
+        } else {
+          window.location.href = `/${vmId}`;
         }
-
-        // if (liff.isApiAvailable('getFriendship')) {
-        //   const friendship = await liff.getFriendship();
-        //   if (!friendship.friendFlag) {
-        //     window.location.href = "https://line.me/R/oaMessage/@342migue/?addfriend";
-        //     return;
-        //   }
-        // }
-
-        window.location.href = `/${vmId}`;
       } catch (err) {
         console.error("LIFF failed:", err);
-        document.body.innerHTML = "<h3 style='color:red;'>xxxxLIFF failed to initialize. Please check LIFF ID or endpoint.</h3>";
+        document.body.innerHTML = "<h3 style='color:red;'>LIFF failed to initialize. Please check LIFF ID or endpoint.</h3>";
       }
     }
 
