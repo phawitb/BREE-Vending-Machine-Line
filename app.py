@@ -218,5 +218,5 @@ def update_all_products(vm_id):
         print(f"❌ Error in update_all_products: {e}")
         return f"❌ Update failed: {e}", 500
 
-if __name__ == '__main__':
-    app.run(port=6002, debug=True)
+# if __name__ == '__main__':
+#     app.run(port=6002, debug=True)
