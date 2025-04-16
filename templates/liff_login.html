@@ -17,22 +17,9 @@
 
         if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
-          return;
+        } else {
+          window.location.href = `/${vmId}`;
         }
-
-        // ✅ ตรวจสอบว่า API getFriendship ใช้ได้ไหม
-        if (liff.isApiAvailable('getFriendship')) {
-          const friendship = await liff.getFriendship();
-          if (!friendship.friendFlag) {
-            // 🟥 ยังไม่เป็นเพื่อน ให้ redirect ไปหน้าเพิ่มเพื่อน
-            window.location.href = "https://line.me/R/oaMessage/@342migue/?addfriend";
-            return;
-          }
-        }
-
-        // 🟢 เป็นเพื่อนแล้ว redirect ไปหน้า VM
-        window.location.href = `/${vmId}`;
-
       } catch (err) {
         console.error("LIFF failed:", err);
         document.body.innerHTML = "<h3 style='color:red;'>LIFF failed to initialize. Please check LIFF ID or endpoint.</h3>";

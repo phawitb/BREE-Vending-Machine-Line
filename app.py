@@ -57,7 +57,9 @@ def index(vm_id):
     session['last_vm_id'] = vm_id
     products = get_products_by_vm(vm_id)
     cart_count = get_cart_count()
-    point = session.get('point', "0")
+
+    point = session.get('point', "0")  # 🟢 Read from session
+
     return render_template('index.html',
                            products=products,
                            cart_count=cart_count,
