@@ -92,9 +92,7 @@
       </a>
       <div class="fs-5 fw-light">Your Shopping Cart</div>
     </div>
-    <div class="d-flex align-items-center gap-2" id="line-profile">
-      <!-- LINE Profile will appear here -->
-    </div>
+    <div class="d-flex align-items-center gap-2" id="line-profile"></div>
   </div>
 
   <!-- Cart Body -->
@@ -141,7 +139,6 @@
         <img id="qrImage" src="" alt="QR Code for Payment" class="img-fluid" style="max-width: 300px;">
         <p class="mt-2 text-muted">Scan with your mobile banking app to complete the payment.</p>
       </div>
-
     {% else %}
       <p class="text-muted px-2 mt-5">Your cart is empty.</p>
     {% endif %}
@@ -150,20 +147,18 @@
     <div class="line-info text-center text-muted" id="line-info-box">
       <p><strong>LINE Display Name:</strong> <span id="line-name">Loading...</span></p>
       <p><strong>Access Token:</strong> <code id="line-token">Loading...</code></p>
-
       <span class="badge bg-warning text-dark ms-2">
         ⭐ {{ point }} pts
       </span>
-
     </div>
-  </div>
 
-  <!-- ✅ Add Friend Button -->
-  <div class="text-center mt-4">
-    <a href="https://line.me/R/oaMessage/@342migue/?addfriend" 
-       class="btn btn-outline-success">
-      ➕ Add LINE Official Account
-    </a>
+    <!-- ✅ Add Friend Button -->
+    <div class="text-center mt-4 mb-4">
+      <a href="https://line.me/R/oaMessage/@YOUR_LINE_OA_ID/?addfriend" 
+         class="btn btn-outline-success">
+        ➕ Add LINE Official Account
+      </a>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -179,39 +174,16 @@
           const profile = await liff.getProfile();
           const token = await liff.getAccessToken();
 
-          // Top-right profile
           document.getElementById("line-profile").innerHTML = `
             <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
               <img src="${profile.pictureUrl}" alt="Profile"
                   style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
             </a>
           `;
-        //   document.getElementById("line-profile").innerHTML = `
-        //   <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 40px; height: 40px;">
-        //     <img src="${profile.pictureUrl}" alt="Profile"
-        //         style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 2px solid #ffc107;">
-        //     <span style="
-        //       position: absolute;
-        //       bottom: 0;
-        //       left: 50%;
-        //       transform: translateX(-50%) translateY(50%);
-        //       background-color: #ffc107;
-        //       color: #000;
-        //       font-weight: 400;
-        //       font-size: 0.2rem;
-        //       padding: 1px 6px;
-        //       border-radius: 999px;
-        //       border: 1px solid white;
-        //       white-space: nowrap;
-        //     ">⭐${sessionStorage.getItem('user_point') || '0'}</span>
-        //   </a>
-        // `;
 
-          // Bottom info box
           document.getElementById("line-name").innerText = profile.displayName;
           document.getElementById("line-token").innerText = token;
 
-          // Save to backend
           await fetch("/profile", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
