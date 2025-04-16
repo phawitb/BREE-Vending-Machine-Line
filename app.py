@@ -110,7 +110,7 @@ def confirm_order(vm_id):
     print(f"🧾 Order confirmed from VM {vm_id}:", cart)
     return jsonify({'status': 'success', 'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'})
 
-@app.route('/profile', methods=['GET', 'POST'])
+@app.route('/<vm_id>/profile', methods=['GET', 'POST'])
 def profile(vm_id):
     if request.method == 'POST':
         data = request.get_json()
@@ -135,7 +135,6 @@ def profile(vm_id):
         line_id = session.get('line_id', None)
         line_name = session.get('line_name', 'Unknown')
         user_picture = session.get('user_picture', '/static/default_user.png')
-        # vm_id = session.get('last_vm_id', 'M0001')
         point = session.get('point', "0")
         show_manage_button = False
         vm_doc = None
