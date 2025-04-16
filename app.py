@@ -135,7 +135,7 @@ def profile():
         line_id = session.get('line_id', None)
         line_name = session.get('line_name', 'Unknown')
         user_picture = session.get('user_picture', '/static/default_user.png')
-        vm_id = session.get('last_vm_id', 'M0001')
+        # vm_id = session.get('last_vm_id', 'M0001')
         point = session.get('point', "0")
         show_manage_button = False
         vm_doc = None
