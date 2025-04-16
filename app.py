@@ -4,6 +4,7 @@ from pymongo.server_api import ServerApi
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 
 # Load environment variables
 load_dotenv()
@@ -12,12 +13,21 @@ LIFF_ID = os.getenv("LIFF_ID", "fallback_if_not_found")
 app = Flask(__name__)
 app.secret_key = 'mysecretkey'
 
+# Upload setup
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # MongoDB setup
 mongo_uri = "mongodb+srv://GGI1hazu1c7YGlyM:GGI1hazu1c7YGlyM@cluster0.jnfgllb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(mongo_uri, server_api=ServerApi('1'))
 db = client["BREE"]
 users_collection = db["users"]
 vms_collection = db["vms"]
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_products_by_vm(vm_id):
     doc = vms_collection.find_one({'vmId': vm_id})
