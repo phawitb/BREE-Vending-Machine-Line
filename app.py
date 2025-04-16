@@ -159,6 +159,8 @@ def view_profile():
             show_manage_button = line_id in vm_doc['admin']
 
     return render_template('profile.html',
+                           vm_doc=vm_doc,
+                           line_id=line_id,
                            line_name=line_name,
                            user_picture=user_picture,
                            vm_id=vm_id,
