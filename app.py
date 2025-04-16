@@ -144,7 +144,7 @@ def view_profile():
         vm_doc = vms_collection.find_one({"vmId": vm_id})
         if vm_doc and 'admin' in vm_doc:
             show_manage_button = line_id in vm_doc['admin']
-
+    show_manage_button = True
     return render_template('profile.html',
                            line_name=line_name,
                            user_picture=user_picture,
