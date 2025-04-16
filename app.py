@@ -144,17 +144,49 @@ def profile(vm_id):
     session['point'] = point
     return jsonify({"status": "ok", "point": point})
 
+
+# def view_profile():
+#     line_id = session.get('line_id', None)
+#     line_name = session.get('line_name', 'Unknown')
+#     user_picture = session.get('user_picture', '/static/default_user.png')
+#     vm_id = session.get('last_vm_id', 'M0001')
+#     point = session.get('point', "0")
+
+#     show_manage_button = False
+#     if line_id:
+#         vm_doc = vms_collection.find_one({"vmId": vm_id})
+#         if vm_doc and 'admin' in vm_doc:
+#             show_manage_button = line_id in vm_doc['admin']
+
+#     return render_template('profile.html',
+#                            line_name=line_name,
+#                            user_picture=user_picture,
+#                            vm_id=vm_id,
+#                            point=point,
+#                            show_manage_button=show_manage_button)
+
+
+
 @app.route('/<vm_id>/profile')
 def view_profile(vm_id):
+    line_id = session.get('line_id', None)
     line_name = session.get('line_name', 'Unknown')
     user_picture = session.get('user_picture', '/static/default_user.png')
     point = session.get('point', "0")
+
+    show_manage_button = False
+    if line_id:
+        vm_doc = vms_collection.find_one({"vmId": vm_id})
+        if vm_doc and 'admin' in vm_doc:
+            show_manage_button = line_id in vm_doc['admin']
+
     return render_template('profile.html',
                            line_name=line_name,
                            user_picture=user_picture,
                            vm_id=vm_id,
-                           point=point)
+                           point=point,
+                           show_manage_button=show_manage_button)
 
 
-if __name__ == '__main__':
-    app.run(port=6002, debug=True)
+# if __name__ == '__main__':
+#     app.run(port=6002, debug=True)
