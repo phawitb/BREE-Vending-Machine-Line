@@ -43,11 +43,12 @@
   </div>
 
   <h3 class="mt-3">{{ line_name }}</h3>
-  <a href="/{{ vm_id }}/" class="btn btn-outline-primary mt-4">← Back to Vending Machine</a>
 
   {% if show_manage_button %}
     <a href="/{{ vm_id }}/manage" class="btn btn-warning mt-3">Manage Product</a>
   {% endif %}
-  
+
+
+  <a href="/{{ vm_id }}/" class="btn btn-outline-primary mt-4">← Back to Vending Machine</a>
 </body>
 </html>
