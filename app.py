@@ -111,7 +111,7 @@ def confirm_order(vm_id):
     return jsonify({'status': 'success', 'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'})
 
 @app.route('/profile', methods=['GET', 'POST'])
-def profile():
+def profile(vm_id):
     if request.method == 'POST':
         data = request.get_json()
         session['line_id'] = data.get('userId')
