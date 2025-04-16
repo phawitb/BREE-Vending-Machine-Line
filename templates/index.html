@@ -113,7 +113,7 @@
         }
         const profile = await liff.getProfile();
 
-        await fetch("/profile", {
+        await fetch(`/${vm_id}/profile`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(profile)
