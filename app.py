@@ -42,15 +42,12 @@ def liff_login():
         next_url = f"/{vm_id}"
     return render_template("liff_login.html", liff_id=LIFF_ID, next_url=next_url)
 
-
 @app.route('/<vm_id>/')
 def index(vm_id):
     session['last_vm_id'] = vm_id
     products = get_products_by_vm(vm_id)
     cart_count = get_cart_count()
-
-    point = session.get('point', "0")  # 🟢 Read from session
-
+    point = session.get('point', "0")
     return render_template('index.html',
                            products=products,
                            cart_count=cart_count,
@@ -58,15 +55,12 @@ def index(vm_id):
                            vm_id=vm_id,
                            point=point)
 
-
-
 @app.route('/<vm_id>/cart')
 def cart(vm_id):
     cart = session.get('cart', {})
     cart_items = []
     total = 0
     products = get_products_by_vm(vm_id)
-
     for product_id, quantity in cart.items():
         for p in products:
             if p['id'] == int(product_id):
@@ -78,18 +72,15 @@ def cart(vm_id):
                     'quantity': quantity,
                     'total': item_total
                 })
-
     cart_count = get_cart_count()
-    point = session.get('point', "0")  # ✅ get point from session
-
+    point = session.get('point', "0")
     return render_template('cart.html',
                            cart_items=cart_items,
                            total=total,
                            cart_count=cart_count,
                            liff_id=LIFF_ID,
                            vm_id=vm_id,
-                           point=point)  # ✅ pass to template
-
+                           point=point)
 
 @app.route('/<vm_id>/clear_cart')
 def clear_cart(vm_id):
@@ -101,14 +92,11 @@ def api_add_to_cart(vm_id):
     product_id = request.json.get('product_id')
     if not product_id:
         return jsonify({'status': 'error', 'message': 'Missing product_id'}), 400
-
     if 'cart' not in session:
         session['cart'] = {}
-
     cart = session['cart']
     cart[str(product_id)] = cart.get(str(product_id), 0) + 1
     session['cart'] = cart
-
     return jsonify({'status': 'success', 'cart': cart})
 
 @app.route('/<vm_id>/api/confirm_order', methods=['POST'])
@@ -116,9 +104,7 @@ def confirm_order(vm_id):
     cart = session.get('cart', {})
     if not cart:
         return jsonify({'status': 'error', 'message': 'Cart is empty'}), 400
-
     print(f"🧾 Order confirmed from VM {vm_id}:", cart)
-
     return jsonify({
         'status': 'success',
         'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'
@@ -127,11 +113,9 @@ def confirm_order(vm_id):
 @app.route('/profile', methods=['POST'])
 def profile():
     data = request.get_json()
-
     session['line_id'] = data.get('userId')
     session['line_name'] = data.get('displayName')
     session['user_picture'] = data.get('pictureUrl')
-
     point = "0"
     if data.get('userId'):
         user = users_collection.find_one({"line_id": data['userId']})
@@ -145,32 +129,40 @@ def profile():
                 'created_at': datetime.utcnow()
             })
     session['point'] = point
-
     return jsonify({"status": "ok", "point": point})
-
-
 
 @app.route('/profile')
 def view_profile():
+    line_id = session.get('line_id', None)
     line_name = session.get('line_name', 'Unknown')
     user_picture = session.get('user_picture', '/static/default_user.png')
     vm_id = session.get('last_vm_id', 'M0001')
-    point = session.get('point', "0")  # 🟢 Read from session
+    point = session.get('point', "0")
+
+    show_manage_button = False
+    if line_id:
+        vm_doc = vms_collection.find_one({"vmId": vm_id})
+        if vm_doc and 'admin' in vm_doc:
+            show_manage_button = line_id in vm_doc['admin']
 
     return render_template('profile.html',
                            line_name=line_name,
                            user_picture=user_picture,
                            vm_id=vm_id,
-                           point=point)
-
-
-
+                           point=point,
+                           show_manage_button=show_manage_button)
 
 @app.route('/profile', methods=['GET'])
 def profile_get():
     display_name = session.get('display_name', 'Guest')
     user_picture = session.get('user_picture', '/static/default_user.png')
     return render_template('profile.html', display_name=display_name, user_picture=user_picture)
+
+@app.route('/<vm_id>/manage')
+def manage_products(vm_id):
+    # Add admin check here if needed
+    products = get_products_by_vm(vm_id)
+    return render_template('manage.html', products=products, vm_id=vm_id)
 
 # if __name__ == '__main__':
 #     app.run(port=6001, debug=True)
