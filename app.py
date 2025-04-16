@@ -3,7 +3,6 @@ from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime
 import os
-from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -12,15 +11,6 @@ LIFF_ID = os.getenv("LIFF_ID", "fallback_if_not_found")
 
 app = Flask(__name__)
 app.secret_key = 'mysecretkey'
-
-# Upload setup
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # MongoDB setup
 mongo_uri = "mongodb+srv://GGI1hazu1c7YGlyM:GGI1hazu1c7YGlyM@cluster0.jnfgllb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
@@ -67,12 +57,15 @@ def index(vm_id):
                            vm_id=vm_id,
                            point=point)
 
+
+
 @app.route('/<vm_id>/cart')
 def cart(vm_id):
     cart = session.get('cart', {})
     cart_items = []
     total = 0
     products = get_products_by_vm(vm_id)
+
     for product_id, quantity in cart.items():
         for p in products:
             if p['id'] == int(product_id):
@@ -84,15 +77,18 @@ def cart(vm_id):
                     'quantity': quantity,
                     'total': item_total
                 })
+
     cart_count = get_cart_count()
-    point = session.get('point', "0")
+    point = session.get('point', "0")  # ✅ get point from session
+
     return render_template('cart.html',
                            cart_items=cart_items,
                            total=total,
                            cart_count=cart_count,
                            liff_id=LIFF_ID,
                            vm_id=vm_id,
-                           point=point)
+                           point=point)  # ✅ pass to template
+
 
 @app.route('/<vm_id>/clear_cart')
 def clear_cart(vm_id):
@@ -104,11 +100,14 @@ def api_add_to_cart(vm_id):
     product_id = request.json.get('product_id')
     if not product_id:
         return jsonify({'status': 'error', 'message': 'Missing product_id'}), 400
+
     if 'cart' not in session:
         session['cart'] = {}
+
     cart = session['cart']
     cart[str(product_id)] = cart.get(str(product_id), 0) + 1
     session['cart'] = cart
+
     return jsonify({'status': 'success', 'cart': cart})
 
 @app.route('/<vm_id>/api/confirm_order', methods=['POST'])
@@ -116,7 +115,9 @@ def confirm_order(vm_id):
     cart = session.get('cart', {})
     if not cart:
         return jsonify({'status': 'error', 'message': 'Cart is empty'}), 400
+
     print(f"🧾 Order confirmed from VM {vm_id}:", cart)
+
     return jsonify({
         'status': 'success',
         'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'
@@ -156,7 +157,6 @@ def view_profile():
         vm_doc = vms_collection.find_one({"vmId": vm_id})
         if vm_doc and 'admin' in vm_doc:
             show_manage_button = line_id in vm_doc['admin']
-    show_manage_button = True
 
     return render_template('profile.html',
                            line_name=line_name,
@@ -260,19 +260,6 @@ def update_all_products(vm_id):
     except Exception as e:
         print(f"❌ Error in update_all_products: {e}")
         return f"❌ Update failed: {e}", 500
-
-@app.route('/fix_missing_counts/<vm_id>')
-def fix_missing_counts(vm_id):
-    doc = vms_collection.find_one({'vmId': vm_id})
-    if doc and 'products' in doc:
-        updated = []
-        for product in doc['products']:
-            if 'count' not in product:
-                product['count'] = 0
-            updated.append(product)
-        vms_collection.update_one({'vmId': vm_id}, {'$set': {'products': updated}})
-        return "✅ Fixed missing 'count' fields"
-    return "❌ VM not found"
 
 if __name__ == '__main__':
     app.run(port=6002, debug=True)
