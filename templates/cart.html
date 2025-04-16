@@ -173,7 +173,7 @@
 
           // Top-right profile
           document.getElementById("line-profile").innerHTML = `
-            <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
+            <a href="/${vm_id}/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
               <img src="${profile.pictureUrl}" alt="Profile"
                   style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
             </a>
@@ -204,7 +204,7 @@
           document.getElementById("line-token").innerText = token;
 
           // Save to backend
-          await fetch("/profile", {
+          await fetch(`/${vm_id}/profile`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...profile, token })
