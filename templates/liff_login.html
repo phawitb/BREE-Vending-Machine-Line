@@ -8,15 +8,17 @@
 <body>
   <h4>🔐 Logging in with LINE...</h4>
   <script>
-    const nextUrl = "{{ next_url }}";
     async function initLiff() {
       try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const vmId = urlParams.get('vmId') || 'M0001';
+
         await liff.init({ liffId: "{{ liff_id }}" });
 
         if (!liff.isLoggedIn()) {
           liff.login({ redirectUri: window.location.href });
         } else {
-          window.location.href = nextUrl;
+          window.location.href = `/${vmId}`;
         }
       } catch (err) {
         console.error("LIFF failed:", err);
