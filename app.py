@@ -265,5 +265,5 @@ def save_order(vm_id):
         print(f"❌ Error saving order: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# if __name__ == '__main__':
-#     app.run(port=6002, debug=True)
+if __name__ == '__main__':
+    app.run(port=6002, debug=True)

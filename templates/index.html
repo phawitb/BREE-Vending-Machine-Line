@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,13 +15,47 @@
     .container-fluid { padding-top: 80px !important; }
     .swiper-container { margin-bottom: 0; }
     .swiper-slide { display: flex; justify-content: center; }
-    .card { width: 100%; margin: 0; border-radius: 0.5rem; overflow: hidden; }
-    .card-img-wrapper { height: 140px; display: flex; align-items: center; justify-content: center; background-color: #fff; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; overflow: hidden; }
-    .card-img-top { max-height: 100%; max-width: 100%; object-fit: contain; border-top-left-radius: 0.5rem; border-top-right-radius: 0.5rem; }
+    .card { width: 100%; margin: 0; border-radius: 0.5rem; overflow: hidden; position: relative; }
+    .card-img-wrapper { height: 140px; display: flex; align-items: center; justify-content: center; background-color: #fff; overflow: hidden; }
+    .card-img-top { max-height: 100%; max-width: 100%; object-fit: contain; }
     .card-title { font-size: 0.75rem; line-height: 1.2rem; height: 2.4rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .card-text { font-size: 1.2rem; font-weight: bold; color: red; }
-    h4 { margin: 0; margin-top: 1rem; font-size: 1.1rem; }
     .sortable-ghost { opacity: 0.4; background: #c8ebfb; }
+    .drag-handle { position: absolute; top: 4px; left: 4px; cursor: grab; font-size: 1.2rem; background: #fff; padding: 2px 6px; border-radius: 5px; box-shadow: 0 1px 5px rgba(0,0,0,0.3); display: none; }
+
+    /* Toggle Switch CSS */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px; width: 22px;
+      left: 3px; bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
     @media (max-width: 576px) {
       h1 { font-size: 1.4rem; }
       .swiper-slide { width: 160px !important; }
@@ -50,9 +83,17 @@
   </div>
 
   <div class="container-fluid px-1">
-    <div id="save-order-wrapper" style="display: none;" class="mb-2 text-end">
-      <button id="save-order-btn" class="btn btn-warning btn-sm">💾 Save Order</button>
+    <div id="drag-control-wrapper" class="d-flex justify-content-end align-items-center gap-2 mb-2" style="display: none;">
+      <div class="d-flex align-items-center gap-1">
+        <span style="font-weight: 500;">Edit</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-drag">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button id="save-order-btn" class="btn btn-warning btn-sm" style="display: none;">💾 Save Order</button>
     </div>
+    
 
     <h4 class="mb-2">Best Sellers</h4>
     <div class="swiper mySwiper2 swiper-container">
@@ -81,6 +122,7 @@
       {% for product in products %}
       <div class="col-6 col-sm-4 col-md-3 col-lg-2">
         <div class="card shadow-sm h-100 m-0">
+          <div class="drag-handle">☰</div>
           <div class="card-img-wrapper">
             <img src="{{ product.image }}" class="card-img-top" alt="{{ product.name }}">
           </div>
@@ -97,160 +139,157 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-  <script>
-    const vm_id = "{{ vm_id }}";
-    const productCountRow2 = {{ products[5:]|length }};
-    new Swiper(".mySwiper2", {
-      loop: productCountRow2 > 5,
-      spaceBetween: 4,
-      breakpoints: {
-        0: { slidesPerView: 2 },
-        576: { slidesPerView: 3 },
-        768: { slidesPerView: 4 },
-        992: { slidesPerView: 5 }
-      }
-    });
+<script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+const vm_id = "{{ vm_id }}";
+const productCountRow2 = {{ products[5:]|length }};
+new Swiper(".mySwiper2", {
+  loop: productCountRow2 > 5,
+  spaceBetween: 4,
+  breakpoints: {
+    0: { slidesPerView: 2 },
+    576: { slidesPerView: 3 },
+    768: { slidesPerView: 4 },
+    992: { slidesPerView: 5 }
+  }
+});
 
-    async function initLiffFlow() {
+async function initLiffFlow() {
+  try {
+    await liff.init({ liffId: "{{ liff_id }}" });
+    if (!liff.isLoggedIn()) {
+      const currentPath = window.location.pathname;
+      window.location.href = `/liff-login?next=${encodeURIComponent(currentPath)}`;
+      return;
+    }
+    const profile = await liff.getProfile();
+    const res = await fetch(`/${vm_id}/profile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile)
+    });
+    const data = await res.json();
+    if (data.point) sessionStorage.setItem('user_point', data.point);
+    if (data.is_admin !== undefined) sessionStorage.setItem('is_admin', data.is_admin ? '1' : '0');
+    document.getElementById("line-profile").innerHTML = `
+      <a href="/${vm_id}/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
+        <img src="${profile.pictureUrl}" alt="Profile"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
+      </a>
+    `;
+  } catch (err) {
+    console.error("LIFF init error:", err);
+    document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF error</span>";
+  }
+}
+
+function setupAddToCartButtons() {
+  document.querySelectorAll('.add-to-cart').forEach(btn => {
+    btn.addEventListener('click', async function (e) {
+      e.preventDefault();
+      const imgSrc = this.getAttribute('data-img');
+      const productId = this.getAttribute('data-id');
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.className = 'fly-img';
+      document.body.appendChild(img);
+      const btnRect = this.getBoundingClientRect();
+      const cartRect = document.getElementById('cartIcon').getBoundingClientRect();
+      img.style.left = (btnRect.left + window.scrollX) + 'px';
+      img.style.top = (btnRect.top + window.scrollY) + 'px';
+      img.style.width = '100px';
+      img.offsetWidth;
+      img.style.left = (cartRect.left + window.scrollX) + 'px';
+      img.style.top = (cartRect.top + window.scrollY) + 'px';
+      img.style.width = '30px';
+      img.style.opacity = '0.5';
+      setTimeout(() => { img.remove(); }, 800);
       try {
-        await liff.init({ liffId: "{{ liff_id }}" });
-        if (!liff.isLoggedIn()) {
-          const currentPath = window.location.pathname;
-          window.location.href = `/liff-login?next=${encodeURIComponent(currentPath)}`;
-          return;
-        }
-        const profile = await liff.getProfile();
-        const res = await fetch(`/${vm_id}/profile`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(profile)
+        const res = await fetch(`/${vm_id}/api/add_to_cart`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: parseInt(productId) })
         });
         const data = await res.json();
-        if (data.point) {
-          sessionStorage.setItem('user_point', data.point);
+        if (data.status === 'success') {
+          const count = Object.values(data.cart).reduce((a, b) => a + b, 0);
+          document.getElementById('cart-count').textContent = count;
+        } else {
+          alert('Add failed');
         }
-        if (data.is_admin !== undefined) {
-          sessionStorage.setItem('is_admin', data.is_admin ? '1' : '0');
-        }
-
-        document.getElementById("line-profile").innerHTML = `
-          <a href="/${vm_id}/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
-            <img src="${profile.pictureUrl}" alt="Profile"
-                style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
-          </a>
-        `;
       } catch (err) {
-        console.error("LIFF init error:", err);
-        document.getElementById("line-profile").innerHTML = "<span class='text-danger'>LIFF error</span>";
+        alert('Server error');
       }
-    }
+    });
+  });
+}
 
-    function setupAddToCartButtons() {
-      document.querySelectorAll('.add-to-cart').forEach(btn => {
-        btn.addEventListener('click', async function (e) {
-          e.preventDefault();
-          const imgSrc = this.getAttribute('data-img');
-          const productId = this.getAttribute('data-id');
-          const img = document.createElement('img');
-          img.src = imgSrc;
-          img.className = 'fly-img';
-          document.body.appendChild(img);
-          const btnRect = this.getBoundingClientRect();
-          const cartRect = document.getElementById('cartIcon').getBoundingClientRect();
-          img.style.left = (btnRect.left + window.scrollX) + 'px';
-          img.style.top = (btnRect.top + window.scrollY) + 'px';
-          img.style.width = '100px';
-          img.offsetWidth;
-          img.style.left = (cartRect.left + window.scrollX) + 'px';
-          img.style.top = (cartRect.top + window.scrollY) + 'px';
-          img.style.width = '30px';
-          img.style.opacity = '0.5';
-          setTimeout(() => { img.remove(); }, 800);
-          try {
-            const res = await fetch(`/${vm_id}/api/add_to_cart`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ product_id: parseInt(productId) })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-              const count = Object.values(data.cart).reduce((a, b) => a + b, 0);
-              document.getElementById('cart-count').textContent = count;
-            } else {
-              alert('Add failed');
-            }
-          } catch (err) {
-            alert('Server error');
-          }
-        });
-      });
-    }
+window.addEventListener("DOMContentLoaded", async () => {
+  await initLiffFlow();
+  setupAddToCartButtons();
 
-    window.addEventListener("DOMContentLoaded", async () => {
-      await initLiffFlow();
-      setupAddToCartButtons();
+  const isAdmin = sessionStorage.getItem('is_admin') === '1';
+  if (isAdmin) {
+    const el = document.getElementById('product-list');
+    const toggleDrag = document.getElementById('toggle-drag');
+    const saveOrderBtn = document.getElementById('save-order-btn');
+    const dragHandles = document.querySelectorAll('.drag-handle');
+    let sortable = null;
+    let originalOrder = Array.from(document.querySelectorAll('#product-list .card')).map(card => {
+      return parseInt(card.querySelector('button').getAttribute('data-id'));
+    });
 
-      const isAdmin = sessionStorage.getItem('is_admin') === '1';
-      if (isAdmin) {
-        const el = document.getElementById('product-list');
+    document.getElementById('drag-control-wrapper').style.display = 'flex';
 
-        // 🧠 เก็บลำดับดั้งเดิม
-        let originalOrder = Array.from(document.querySelectorAll('#product-list .card')).map(card => {
-          return parseInt(card.querySelector('button').getAttribute('data-id'));
-        });
-
-        new Sortable(el, {
+    toggleDrag.addEventListener('change', () => {
+      if (toggleDrag.checked) {
+        dragHandles.forEach(h => h.style.display = 'block');
+        sortable = new Sortable(el, {
           animation: 150,
           ghostClass: 'sortable-ghost',
-          onEnd: function (evt) {
+          handle: '.drag-handle',
+          onEnd: function () {
             const currentOrder = Array.from(document.querySelectorAll('#product-list .card')).map(card => {
               return parseInt(card.querySelector('button').getAttribute('data-id'));
             });
-
-            // เช็กว่าลำดับเปลี่ยนไหม
             const isChanged = JSON.stringify(currentOrder) !== JSON.stringify(originalOrder);
-
-            if (isChanged) {
-              document.getElementById('save-order-wrapper').style.display = 'block';
-            } else {
-              document.getElementById('save-order-wrapper').style.display = 'none';
-            }
+            saveOrderBtn.style.display = isChanged ? 'block' : 'none';
           }
         });
-
-        document.getElementById('save-order-wrapper').style.display = 'none';
-
-        document.getElementById('save-order-btn').addEventListener('click', async () => {
-          const newOrder = Array.from(document.querySelectorAll('#product-list .card')).map(card => {
-            return parseInt(card.querySelector('button').getAttribute('data-id'));
-          });
-
-          try {
-            const res = await fetch(`/${vm_id}/api/save_order`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ new_order: newOrder })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-              alert('✅ Order saved successfully');
-
-              // ✅ หลัง save สำเร็จ อัปเดต originalOrder ใหม่
-              originalOrder = newOrder;
-              document.getElementById('save-order-wrapper').style.display = 'none';
-            } else {
-              alert('❌ Failed to save order');
-            }
-          } catch (err) {
-            console.error('Save order error:', err);
-            alert('❌ Server error while saving order');
-          }
-        });
+      } else {
+        dragHandles.forEach(h => h.style.display = 'none');
+        if (sortable) sortable.destroy();
+        sortable = null;
+        saveOrderBtn.style.display = 'none';
       }
-
     });
-  </script>
+
+    saveOrderBtn.addEventListener('click', async () => {
+      const newOrder = Array.from(document.querySelectorAll('#product-list .card')).map(card => {
+        return parseInt(card.querySelector('button').getAttribute('data-id'));
+      });
+      try {
+        const res = await fetch(`/${vm_id}/api/save_order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_order: newOrder })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('✅ Order saved successfully');
+          originalOrder = newOrder;
+          saveOrderBtn.style.display = 'none';
+        } else {
+          alert('❌ Failed to save order');
+        }
+      } catch (err) {
+        console.error('Save order error:', err);
+        alert('❌ Server error while saving order');
+      }
+    });
+  }
+});
+</script>
 </body>
 </html>
