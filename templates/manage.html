@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Products</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      background-color: #f8f9fa;
+    }
+
+    .cart-title-fixed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: #f8f9fa;
+      z-index: 1000;
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: #333;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .btn-back:hover {
+      color: #0d6efd;
+    }
+
+    .cart-body {
+      padding-top: 100px;
+      padding-bottom: 2rem;
+    }
+
+    .product-img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 0.25rem;
+    }
+
+    .spinner-border {
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-left: 0.5rem;
+    }
+
+    .count-label {
+      font-weight: bold;
+    }
+
+    .count-zero-label {
+      color: red !important;
+    }
+
+    .count-ok-label {
+      color: blue !important;
+    }
+
+    .count-zero {
+      border: 2px solid red !important;
+      color: red;
+    }
+
+    .count-ok {
+      border: 2px solid blue !important;
+      color: blue;
+    }
+
+    .field-label {
+      font-size: 0.75rem;
+      color: #6c757d;
+    }
+
+    .form-control-sm {
+      margin-bottom: 0.25rem !important;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Fixed Header -->
+  <div class="cart-title-fixed">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('index', vm_id=vm_id) }}" class="d-flex align-items-center">
+        <img src="{{ url_for('static', filename='img/BackArrowIcon.png') }}" alt="Back" style="height: 24px;">
+      </a>
+      <div class="fs-5 fw-light">Manage Products</div>
+    </div>
+    <div class="d-flex align-items-center gap-2" id="line-profile"></div>
+  </div>
+
+  <div class="container cart-body">
+    <h2 class="mb-4">VM ID :: {{ vm_id }}</h2>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Add New Product Form inside a card -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body p-3">
+        <h6 class="card-title text-muted mb-3">➕ Add New Product</h6>
+        <form action="/{{ vm_id }}/add_product" method="POST" enctype="multipart/form-data">
+          <div class="row g-1 align-items-end">
+            <div class="col-md-3">
+              <label class="form-label field-label">Name</label>
+              <input type="text" name="name" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label field-label">Price</label>
+              <input type="number" name="price" step="0.01" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label field-label">Barcode</label>
+              <input type="text" name="barcode" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label field-label">Image File</label>
+              <input type="file" name="image_file" class="form-control form-control-sm" accept="image/*">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label field-label">Or Image URL</label>
+              <input type="text" name="image_url" class="form-control form-control-sm" placeholder="https://example.com/image.jpg">
+            </div>
+            <div class="col-md-1">
+              <label class="form-label field-label">Count</label>
+              <input type="number" name="count" min="0" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-12 mt-2 text-end">
+              <button type="submit" class="btn btn-success btn-sm">Add Product</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Update All Products Form -->
+    <form id="update-form" action="/{{ vm_id }}/update_all_products" method="POST" enctype="multipart/form-data">
+      {% for product in products %}
+      <div class="d-flex justify-content-between align-items-start border bg-white rounded p-3 mb-2">
+        <div class="d-flex align-items-start w-100">
+          <!-- Left: Image + Count -->
+          <div class="d-flex flex-column align-items-center me-3">
+            <img src="{{ product.image or '/static/default_product.jpg' }}" class="product-img mb-2">
+            <div class="text-center" style="width: 100px;">
+              <label class="form-label mb-1 count-label">Count</label>
+              <input type="number" name="count[]" value="{{ product.count or 0 }}"
+                     class="form-control form-control-sm count-input" min="0" required>
+            </div>
+          </div>
+
+          <!-- Right: Fields -->
+          <div class="w-100">
+            <input type="hidden" name="id[]" value="{{ product.id }}">
+
+            <label class="form-label field-label">Name</label>
+            <input type="text" name="name[]" value="{{ product.name }}" class="form-control form-control-sm" required>
+
+            <label class="form-label field-label">Price</label>
+            <input type="number" name="price[]" value="{{ product.price }}" step="0.01" class="form-control form-control-sm" required>
+
+            <label class="form-label field-label">Image URL</label>
+            <input type="text" name="image[]" value="{{ product.image }}" class="form-control form-control-sm">
+
+            <!-- ✅ Barcode -->
+            <label class="form-label field-label">Barcode</label>
+            <input type="text" name="barcode[]" value="{{ product.barcode or '' }}" class="form-control form-control-sm">
+
+            <label class="form-label field-label">Replace Image</label>
+            <input type="file" name="image_file[]" class="form-control form-control-sm" accept="image/*">
+          </div>
+        </div>
+
+        <!-- Delete -->
+        <div>
+          <button type="submit"
+                  formaction="/{{ vm_id }}/delete_product"
+                  formmethod="POST"
+                  name="id"
+                  value="{{ product.id }}"
+                  class="btn btn-danger btn-sm ms-2"
+                  onclick="return confirm('❗ คุณต้องการลบสินค้า {{ product.name }} ใช่หรือไม่?');">
+            🗑️
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if products %}
+      <div class="text-end mt-3">
+        <button id="update-btn" type="submit" class="btn btn-primary">
+          💾 Update All
+          <span id="update-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+        </button>
+        <div id="update-status" class="text-success mt-2 fw-semibold" style="display: none;">
+          ✅ Finish updating products. Please wait while saving...
+        </div>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const vm_id = "{{ vm_id }}";
+
+    async function startLiff() {
+      try {
+        await liff.init({ liffId: "{{ liff_id }}" });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          const profile = await liff.getProfile();
+          const token = await liff.getAccessToken();
+
+          document.getElementById("line-profile").innerHTML = `
+            <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
+              <img src="${profile.pictureUrl}" alt="Profile"
+                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
+            </a>
+          `;
+
+          await fetch("/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...profile, token })
+          });
+        }
+      } catch (err) {
+        console.error("LIFF Error:", err);
+      }
+    }
+
+    window.onload = () => {
+      startLiff();
+
+      const countInputs = document.querySelectorAll('.count-input');
+
+      countInputs.forEach(input => {
+        const label = input.closest('div').querySelector('.count-label');
+
+        function updateStyle() {
+          input.classList.remove("count-zero", "count-ok");
+          label.classList.remove("count-zero-label", "count-ok-label");
+
+          if (parseInt(input.value) === 0) {
+            input.classList.add("count-zero");
+            label.classList.add("count-zero-label");
+          } else {
+            input.classList.add("count-ok");
+            label.classList.add("count-ok-label");
+          }
+        }
+
+        input.addEventListener('input', updateStyle);
+        updateStyle();
+      });
+    };
+
+    const form = document.getElementById("update-form");
+    const button = document.getElementById("update-btn");
+    const spinner = document.getElementById("update-spinner");
+    const statusText = document.getElementById("update-status");
+
+    form?.addEventListener("submit", function () {
+      if (spinner) spinner.classList.remove("d-none");
+      if (button) button.disabled = true;
+      if (statusText) statusText.style.display = "block";
+    });
+  </script>
+  <script>
+    // Validate Add Product Form
+    const addForm = document.querySelector('form[action$="add_product"]');
+    if (addForm) {
+      addForm.addEventListener('submit', (e) => {
+        const name = addForm.querySelector('[name="name"]').value.trim();
+        const price = addForm.querySelector('[name="price"]').value.trim();
+        const barcode = addForm.querySelector('[name="barcode"]').value.trim();
+        const countField = addForm.querySelector('[name="count"]');
+  
+        if (!name || !price || !barcode) {
+          alert("⚠️ กรุณากรอก Name, Price และ Barcode ให้ครบถ้วน");
+          e.preventDefault();
+          return;
+        }
+  
+        if (!countField.value.trim()) {
+          countField.value = "0";
+        }
+      });
+    }
+  
+    // Validate Update All Products Form
+    const updateForm = document.getElementById("update-form");
+    if (updateForm) {
+      updateForm.addEventListener("submit", (e) => {
+        const names = updateForm.querySelectorAll('[name="name[]"]');
+        const prices = updateForm.querySelectorAll('[name="price[]"]');
+        const barcodes = updateForm.querySelectorAll('[name="barcode[]"]');
+        const counts = updateForm.querySelectorAll('[name="count[]"]');
+  
+        for (let i = 0; i < names.length; i++) {
+          const name = names[i].value.trim();
+          const price = prices[i].value.trim();
+          const barcode = barcodes[i].value.trim();
+  
+          if (!name || !price || !barcode) {
+            alert("⚠️ สินค้าทุกชิ้นต้องมี Name, Price และ Barcode");
+            e.preventDefault();
+            return;
+          }
+  
+          if (!counts[i].value.trim()) {
+            counts[i].value = "0";
+          }
+        }
+      });
+    }
+  </script>
+  
+</body>
+</html>
