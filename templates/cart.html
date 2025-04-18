@@ -150,6 +150,11 @@
     <div class="line-info text-center text-muted" id="line-info-box">
       <p><strong>LINE Display Name:</strong> <span id="line-name">Loading...</span></p>
       <p><strong>Access Token:</strong> <code id="line-token">Loading...</code></p>
+
+      <span class="badge bg-warning text-dark ms-2">
+        ⭐ {{ point }} pts
+      </span>
+
     </div>
   </div>
 
@@ -168,16 +173,38 @@
 
           // Top-right profile
           document.getElementById("line-profile").innerHTML = `
-            <img src="${profile.pictureUrl}" width="34" height="34" style="border-radius: 8px; object-fit: cover;" />
-            <span class="d-none d-sm-inline fw-semibold">${profile.displayName}</span>
+            <a href="/${vm_id}/profile" class="position-relative d-inline-block text-decoration-none" style="width: 35px; height: 35px;">
+              <img src="${profile.pictureUrl}" alt="Profile"
+                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 1px solid #ffc107;">
+            </a>
           `;
+        //   document.getElementById("line-profile").innerHTML = `
+        //   <a href="/profile" class="position-relative d-inline-block text-decoration-none" style="width: 40px; height: 40px;">
+        //     <img src="${profile.pictureUrl}" alt="Profile"
+        //         style="width: 100%; height: 100%; object-fit: cover; border-radius: 20%; border: 2px solid #ffc107;">
+        //     <span style="
+        //       position: absolute;
+        //       bottom: 0;
+        //       left: 50%;
+        //       transform: translateX(-50%) translateY(50%);
+        //       background-color: #ffc107;
+        //       color: #000;
+        //       font-weight: 400;
+        //       font-size: 0.2rem;
+        //       padding: 1px 6px;
+        //       border-radius: 999px;
+        //       border: 1px solid white;
+        //       white-space: nowrap;
+        //     ">⭐${sessionStorage.getItem('user_point') || '0'}</span>
+        //   </a>
+        // `;
 
           // Bottom info box
           document.getElementById("line-name").innerText = profile.displayName;
           document.getElementById("line-token").innerText = token;
 
           // Save to backend
-          await fetch("/profile", {
+          await fetch(`/${vm_id}/profile`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...profile, token })
