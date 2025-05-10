@@ -1,9 +1,10 @@
-from flask import Flask, render_template, session, redirect, url_for, request, jsonify
+from flask import Flask, render_template, session, redirect, url_for, request, jsonify, flash
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 
 # Load environment variables
 load_dotenv()
@@ -12,12 +13,21 @@ LIFF_ID = os.getenv("LIFF_ID", "fallback_if_not_found")
 app = Flask(__name__)
 app.secret_key = 'mysecretkey'
 
+# Upload setup
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 # MongoDB setup
 mongo_uri = "mongodb+srv://GGI1hazu1c7YGlyM:GGI1hazu1c7YGlyM@cluster0.jnfgllb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(mongo_uri, server_api=ServerApi('1'))
 db = client["BREE"]
 users_collection = db["users"]
 vms_collection = db["vms"]
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_products_by_vm(vm_id):
     doc = vms_collection.find_one({'vmId': vm_id})
@@ -123,14 +133,12 @@ def confirm_order(vm_id):
         'qr_url': 'https://blog.tcea.org/wp-content/uploads/2022/05/qrcode_tcea.org-1.png'
     })
 
-@app.route('/profile', methods=['POST'])
-def profile():
+@app.route('/<vm_id>/profile', methods=['POST'])
+def profile(vm_id):
     data = request.get_json()
-
     session['line_id'] = data.get('userId')
     session['line_name'] = data.get('displayName')
     session['user_picture'] = data.get('pictureUrl')
-
     point = "0"
     if data.get('userId'):
         user = users_collection.find_one({"line_id": data['userId']})
@@ -144,32 +152,139 @@ def profile():
                 'created_at': datetime.utcnow()
             })
     session['point'] = point
-
     return jsonify({"status": "ok", "point": point})
 
 
+# def view_profile():
+#     line_id = session.get('line_id', None)
+#     line_name = session.get('line_name', 'Unknown')
+#     user_picture = session.get('user_picture', '/static/default_user.png')
+#     vm_id = session.get('last_vm_id', 'M0001')
+#     point = session.get('point', "0")
 
-@app.route('/profile')
-def view_profile():
+#     show_manage_button = False
+#     if line_id:
+#         vm_doc = vms_collection.find_one({"vmId": vm_id})
+#         if vm_doc and 'admin' in vm_doc:
+#             show_manage_button = line_id in vm_doc['admin']
+
+#     return render_template('profile.html',
+#                            line_name=line_name,
+#                            user_picture=user_picture,
+#                            vm_id=vm_id,
+#                            point=point,
+#                            show_manage_button=show_manage_button)
+
+
+
+@app.route('/<vm_id>/profile')
+def view_profile(vm_id):
+    line_id = session.get('line_id', None)
     line_name = session.get('line_name', 'Unknown')
     user_picture = session.get('user_picture', '/static/default_user.png')
-    vm_id = session.get('last_vm_id', 'M0001')
-    point = session.get('point', "0")  # 🟢 Read from session
+    point = session.get('point', "0")
+
+    show_manage_button = False
+    if line_id:
+        vm_doc = vms_collection.find_one({"vmId": vm_id})
+        if vm_doc and 'admin' in vm_doc:
+            show_manage_button = line_id in vm_doc['admin']
 
     return render_template('profile.html',
                            line_name=line_name,
                            user_picture=user_picture,
                            vm_id=vm_id,
-                           point=point)
+                           point=point,
+                           show_manage_button=show_manage_button)
 
+@app.route('/<vm_id>/manage')
+def manage_products(vm_id):
+    products = get_products_by_vm(vm_id)
+    return render_template('manage.html', products=products, vm_id=vm_id)
 
+@app.route('/<vm_id>/add_product', methods=['POST'])
+def add_product(vm_id):
+    name = request.form['name'].strip()
+    price = float(request.form['price'])
+    count = int(request.form.get('count', 0))
 
+    image = None
+    if 'image_file' in request.files:
+        file = request.files['image_file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            image = f'/static/uploads/{filename}'
 
-@app.route('/profile', methods=['GET'])
-def profile_get():
-    display_name = session.get('display_name', 'Guest')
-    user_picture = session.get('user_picture', '/static/default_user.png')
-    return render_template('profile.html', display_name=display_name, user_picture=user_picture)
+    if not image:
+        image = request.form.get('image_url', '').strip()
+        if not image:
+            image = '/static/default_product.jpg'
 
+    vm_doc = vms_collection.find_one({'vmId': vm_id})
+    if vm_doc:
+        products = vm_doc.get('products', [])
+        if any(p['name'].strip().lower() == name.lower() for p in products):
+            flash(f"❌ ชื่อสินค้า '{name}' มีอยู่แล้ว ไม่สามารถเพิ่มซ้ำได้", 'danger')
+            return redirect(url_for('manage_products', vm_id=vm_id))
+
+        new_id = max((p['id'] for p in products), default=0) + 1
+        products.append({
+            'id': new_id,
+            'name': name,
+            'price': price,
+            'image': image,
+            'count': count
+        })
+        vms_collection.update_one({'vmId': vm_id}, {'$set': {'products': products}})
+        flash(f"✅ เพิ่มสินค้า '{name}' สำเร็จแล้ว", 'success')
+
+    return redirect(url_for('manage_products', vm_id=vm_id))
+
+@app.route('/<vm_id>/delete_product', methods=['POST'])
+def delete_product(vm_id):
+    product_id = int(request.form['id'])
+    vm_doc = vms_collection.find_one({'vmId': vm_id})
+    if vm_doc:
+        products = [p for p in vm_doc.get('products', []) if p['id'] != product_id]
+        vms_collection.update_one({'vmId': vm_id}, {'$set': {'products': products}})
+    return redirect(url_for('manage_products', vm_id=vm_id))
+
+@app.route('/<vm_id>/update_all_products', methods=['POST'])
+def update_all_products(vm_id):
+    try:
+        ids = request.form.getlist('id[]')
+        names = request.form.getlist('name[]')
+        prices = request.form.getlist('price[]')
+        old_images = request.form.getlist('image[]')
+        counts = request.form.getlist('count[]')
+        image_files = request.files.getlist('image_file[]')
+
+        updated_products = []
+
+        for i in range(len(ids)):
+            image = old_images[i]
+            if image_files[i] and allowed_file(image_files[i].filename):
+                filename = secure_filename(image_files[i].filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                image_files[i].save(filepath)
+                image = f'/static/uploads/{filename}'
+
+            product = {
+                'id': int(ids[i]),
+                'name': names[i],
+                'price': float(prices[i]),
+                'image': image,
+                'count': int(counts[i]) if counts[i] else 0
+            }
+            updated_products.append(product)
+
+        vms_collection.update_one({'vmId': vm_id}, {'$set': {'products': updated_products}})
+        return redirect(url_for('manage_products', vm_id=vm_id))
+
+    except Exception as e:
+        print(f"❌ Error in update_all_products: {e}")
+        return f"❌ Update failed: {e}", 500
 # if __name__ == '__main__':
-#     app.run(port=6001, debug=True)
+#     app.run(port=6002, debug=True)
