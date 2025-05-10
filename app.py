@@ -35,10 +35,23 @@ def get_cart_count():
 def root():
     return 'Welcome. Try /M0001/'
 
+# @app.route('/liff-login')
+# def liff_login():
+#     next_url = request.args.get("next", "/")
+#     return render_template("liff_login.html", liff_id=LIFF_ID, next_url=next_url)
+
 @app.route('/liff-login')
 def liff_login():
-    next_url = request.args.get("next", "/")
+    # สามารถเก็บได้ทั้ง 2 แบบ
+    next_url = request.args.get("next")
+    vm_id = request.args.get("vmId", "M0001")
+
+    # เลือก next_url ถ้ามี, fallback เป็น /<vm_id>
+    if not next_url:
+        next_url = f"/{vm_id}"
+        
     return render_template("liff_login.html", liff_id=LIFF_ID, next_url=next_url)
+
 
 
 # Route: Homepage (Product list)
@@ -134,6 +147,6 @@ def profile():
 
     return jsonify({"status": "ok", "message": "New user inserted", "line_id": line_id})
 
-# # Run the app
-# if __name__ == '__main__':
-#     app.run(port=6002, debug=True)
+# Run the app
+if __name__ == '__main__':
+    app.run(port=6003, debug=True)
