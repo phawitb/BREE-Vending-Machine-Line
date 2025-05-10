@@ -11,12 +11,12 @@
     async function initLiff() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const vmId = urlParams.get('vmId') || 'M0001';  // default fallback
+        const vmId = urlParams.get('vmId') || 'M0001';
 
         await liff.init({ liffId: "{{ liff_id }}" });
 
         if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: window.location.href }); // re-login if needed
+          liff.login({ redirectUri: window.location.href });
         } else {
           window.location.href = `/${vmId}`;
         }
